@@ -75,7 +75,7 @@ setting_foo = ScopedSetting(GetPreference(SomePackage, "foo", 42))
 setting_bar = ScopedSetting(GetPreference(SomePackage, "bar", :green))
 
 setting_foo[] == either_envvar_or_preference_value_or_42
-setting_foo[] == either_envvar_or_preference_value_or_green
+setting_bar[] == either_envvar_or_preference_value_or_green
 
 @with setting_foo => 11 setting_bar => :blue begin
     # Different values within this scope
@@ -84,7 +84,7 @@ end
 
 # Original values outside of the scope
 setting_foo[] == either_envvar_or_preference_value_or_42
-setting_foo[] == either_envvar_or_preference_value_or_green
+setting_bar[] == either_envvar_or_preference_value_or_green
 ```
 
 In the global scope, the value of `setting_foo[]` will depend on the `LocalPreferences.toml` files (if any) in your `LOAD_PATH` that have entries like
@@ -101,5 +101,5 @@ and environment variables like `SOMEPACKAGEJL_FOO` and `SOMEPACKAGEJL_BAR` (envi
 
 ```julia
 get_foo = GetPreference(SomePackage, "foo", 42)
-get_foo() == either_envvar_or_preference_value_or_42
+get_bar() == either_envvar_or_preference_value_or_42
 ```
