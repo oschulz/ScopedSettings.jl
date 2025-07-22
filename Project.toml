@@ -1,6 +1,6 @@
 name = "ScopedSettings"
 uuid = "6ffd3f19-5aa5-475d-9277-f0318686a530"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
