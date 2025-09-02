@@ -59,7 +59,9 @@ function ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
     )
 end
 
-ScopedSetting(x_default::T) where T = ScopedSetting{T,Returns{T}}(Returns(x_default))
+ScopedSetting{T1}(x_default::T2) where {T1,T2} = ScopedSetting{T1,Returns{T2}}(Returns(x_default))
+
+ScopedSetting(x_default::T) where T = ScopedSetting{T}(x_default)
 
 function ScopedSetting(f_default::F) where {F<:Function}
     T = Core.Compiler.return_type(f_default, Tuple{})
