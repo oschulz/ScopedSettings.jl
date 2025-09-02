@@ -68,4 +68,20 @@ using ScopedValues: @with, with
             () -> @with s_a._scopedval => 21 s_b._scopedval => :violet (s_a[], s_b[])
         )()) == (21, :violet)
     end
+
+    s_union = ScopedSetting{Union{Int,Float64}}(42)
+
+    @testset "union types" begin
+        @test s_union[] == 42
+
+        @with s_union => 11 begin
+            @test s_union[] == 11
+            @test s_union[] isa Int
+        end
+
+        @with s_union => 5.0 begin
+            @test s_union[] == 5.0
+            @test s_union[] isa Float64
+        end
+    end
 end
