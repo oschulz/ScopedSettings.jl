@@ -10,7 +10,8 @@ end # testset
 
 Test.@testset "Aqua tests" begin
     Aqua.test_all(
-        ScopedSettings,
-        ambiguities = true
+        ScopedSettings;
+        ambiguities = true,
+        stale_deps = (ignore = [:ScopedValues],) 
     )
 end # testset

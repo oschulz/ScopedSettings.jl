@@ -49,6 +49,8 @@ struct ScopedSetting{T,F<:Base.Callable}
 end
 export ScopedSetting
 
+# ToDo: Make ScopedSetting a subtype of AbstractScopedValue on Julia >= v1.13?
+# ToDo: Make use of LazyScopedValue on Julia >= v1.13?
 
 function ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
     return ScopedSetting{T,F}(
@@ -95,8 +97,12 @@ function Base.setindex!(s::ScopedSetting, new_default)
     return new_default
 end
 
-
-_AnyScoped = Union{<:ScopedSetting,<:ScopedValue}
+@static if isdefined(ScopedValues, :AbstractScopedValue)
+    const _AnyScoped = Union{<:ScopedSetting,<:ScopedValues.AbstractScopedValue}
+else
+    # Julia < v1.13:
+    const _AnyScoped = Union{<:ScopedSetting,<:ScopedValue}
+end 
 
 _get_scopedvalue(v::ScopedValue) = v
 _get_scopedvalue(s::ScopedSetting) = s._scopedval
@@ -105,10 +111,16 @@ _scopedvalue_pair(pair::Pair{<:ScopedValue}) = pair
 _scopedvalue_pair(pair::Pair{<:ScopedSetting}) = _get_scopedvalue(pair.first) => pair.second
 
 
-@inline function ScopedValues.with(f, pair::Pair{<:_AnyScoped}, rest::Pair{<:_AnyScoped}...)
-    with(f, _scopedvalue_pair(pair), map(_scopedvalue_pair, rest)...)
+@static if isdefined(Base, :ScopedValues)
+    function ScopedValues.with(f, pair::Pair{<:_AnyScoped}, rest::Pair{<:_AnyScoped}...)
+        @with(_scopedvalue_pair(pair), map(_scopedvalue_pair, rest)..., f())
+    end
+else
+    # Julia < v1.11:
+    @inline function ScopedValues.with(f, pair::Pair{<:_AnyScoped}, rest::Pair{<:_AnyScoped}...)
+        with(f, _scopedvalue_pair(pair), map(_scopedvalue_pair, rest)...)
+    end
 end
-
 
 # Implements support for @with, modified versions of ScopedValues.Scope methods for ScopedValue:
 

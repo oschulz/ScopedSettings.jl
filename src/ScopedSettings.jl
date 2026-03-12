@@ -12,8 +12,12 @@ using Compat: @compat
 
 using Preferences: load_preference, main_uuid
 
-import ScopedValues
-using ScopedValues: ScopedValue, Scope, with, @with
+@static if isdefined(Base, :ScopedValues)
+    using Base.ScopedValues: ScopedValues, ScopedValue, Scope, with, @with
+else
+    # Julia < v1.11, use ScopedValues.jl:
+    using ScopedValues: ScopedValues, ScopedValue, Scope, with, @with
+end
 
 export with, @with
 
