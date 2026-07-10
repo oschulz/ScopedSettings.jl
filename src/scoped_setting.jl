@@ -13,8 +13,14 @@ Constructors:
 ScopedSetting(x_default)
 ScopedSetting(f_default::Function)
 ScopedSetting(ctor_default::Type)
+ScopedSetting{T}(x_default)
+ScopedSetting{T}(f_default::Function)
+ScopedSetting{T}(ctor_default::Type)
 ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
 ```
+
+`Function` and `Type` arguments are always taken as default-value factories.
+To use a callable or type as the default value itself, wrap it in `Returns`.
 
 Example:
 
@@ -61,12 +67,19 @@ function ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
     )
 end
 
-ScopedSetting{T1}(x_default::T2) where {T1,T2} = ScopedSetting{T1,Returns{T2}}(Returns(x_default))
+function ScopedSetting{T}(x_default) where T
+    f_default = Returns(convert(T, x_default))
+    return ScopedSetting{T,typeof(f_default)}(f_default)
+end
+
+ScopedSetting{T}(f_default::F) where {T,F<:Function} = ScopedSetting{T,F}(f_default)
+
+ScopedSetting{T}(ctor_default::Type{U}) where {T,U} = ScopedSetting{T,Type{U}}(ctor_default)
 
 ScopedSetting(x_default::T) where T = ScopedSetting{T}(x_default)
 
 function ScopedSetting(f_default::F) where {F<:Function}
-    T = Core.Compiler.return_type(f_default, Tuple{})
+    T = Base.promote_op(f_default)
     ScopedSetting{T,F}(f_default)
 end
 

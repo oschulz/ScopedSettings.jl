@@ -18,6 +18,16 @@ using ScopedValues: @with, with
     @test ScopedSetting(Symbol) isa ScopedSetting{Symbol, Type{Symbol}}
     @test @inferred(ScopedSetting(Symbol)[]) == Symbol()
 
+    # Explicit-type ctor must convert value defaults:
+    @test @inferred(ScopedSetting{Float64}(42)) isa ScopedSetting{Float64, Returns{Float64}}
+    @test @inferred(ScopedSetting{Float64}(42)[]) === 42.0
+
+    # Explicit-type ctor must pass functions and type ctors through:
+    @test @inferred(ScopedSetting{Symbol}(GetPreference(ScopedSettings, "some_pref", :green))) isa ScopedSetting{Symbol, GetPreference{Symbol, Nothing}}
+    @test @inferred(ScopedSetting{Float64}(() -> 4.2)[]) === 4.2
+    @test ScopedSetting{AbstractVector}(Vector{Int}) isa ScopedSetting{AbstractVector, Type{Vector{Int}}}
+    @test ScopedSetting{AbstractVector}(Vector{Int})[] == Int[]
+
     s_a = ScopedSetting(42)
     s_b = ScopedSetting(GetPreference(ScopedSettings, "some_pref", :green))
 
