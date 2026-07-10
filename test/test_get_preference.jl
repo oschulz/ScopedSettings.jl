@@ -112,7 +112,8 @@ import Preferences
     @testset "module UUID resolution" begin
         f_sub = GetPreference(Pkg.Types, "some_pref", 42)
         @test f_sub._module_uuid == Base.PkgId(Pkg).uuid
-        @test f_sub._env_name == "TYPESJL_SOME_PREF"
+        @test f_sub._module_name == "Pkg"
+        @test f_sub._env_name == "PKGJL_SOME_PREF"
 
         # Anonymous modules resolve via their parentmodule chain to Main,
         # which has no package UUID here:

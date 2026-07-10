@@ -14,8 +14,9 @@ GetPreference(m::Module, pref_name::AbstractString, env_name::AbstractString, x_
 GetPreference{T}(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing)
 ```
 
-If `env_name` is not specified, it defaults to the uppercase module name,
-followed by `JL_`, followed by the uppercase preference name.
+If `env_name` is not specified, it defaults to the uppercase name of the
+root package module of `m`, followed by `JL_`, followed by the uppercase
+preference name.
 
 Example:
 
@@ -59,7 +60,7 @@ export GetPreference
 
 
 function GetPreference{T}(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing) where T
-    module_name = string(nameof(m))
+    module_name = string(nameof(Base.moduleroot(m)))
     module_uuid = _get_module_uuid(m)
     new_x_default = convert(T, x_default)
     F = Core.Typeof(f_conv)
@@ -73,7 +74,7 @@ function GetPreference(m::Module, pref_name::AbstractString, env_name::AbstractS
 end
 
 function GetPreference(m::Module, pref_name::AbstractString, x_default::T; f_conv = nothing) where T
-    module_name = string(nameof(m))
+    module_name = string(nameof(Base.moduleroot(m)))
     env_name = uppercase(module_name) * "JL_" * uppercase(pref_name)
     GetPreference(m, pref_name, env_name, x_default; f_conv = f_conv)
 end
