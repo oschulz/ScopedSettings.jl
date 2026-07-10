@@ -1,9 +1,9 @@
 # This file is a part of ScopedSettings.jl, licensed under the MIT License (MIT).
 
 """
-    struct GetPreference{T} <: Function
+    struct GetPreference{T,F} <: Function
 
-Represents a function that retrieves an a preference via Julia Preferences.jl,
+Represents a function that retrieves a preference via Julia Preferences.jl,
 environment variables and a default value.
 
 Constructors:

@@ -16,9 +16,9 @@ different scopes. But unlike a `ScopedValue`, the global default value of a
 `ScopedSetting` can either be a value or can be computed on the fly, and can
 be mutated via a global override. ScopedSettings integrates with
 [Preferences](https://github.com/JuliaPackaging/Preferences.jl)
-to base `ScopedValue` default values on preferences and environment variables.
+to base `ScopedSetting` default values on preferences and environment variables.
 
- See the package documentation for more details:
+See the package documentation for more details:
 
 * [Documentation for stable version](https://oschulz.github.io/ScopedSettings.jl/stable)
 * [Documentation for development version](https://oschulz.github.io/ScopedSettings.jl/dev)
