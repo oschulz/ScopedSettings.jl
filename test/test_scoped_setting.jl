@@ -44,6 +44,19 @@ using ScopedValues: @with, with
     @test @inferred(s_a[]) == 11
     @test @inferred(s_b[]) == :turquoise
 
+    with(s_a => 21) do
+        @test_throws ErrorException s_a[] = 0
+    end
+    @test s_a[] == 11
+
+    s_a[] = nothing
+    s_b[] = nothing
+    @test @inferred(s_a[]) == 42
+    @test @inferred(s_b[]) == :blue
+
+    s_a[] = 11
+    s_b[] = :turquoise
+
     let s_a = s_a, s_b = s_b
         @test @inferred(
             with(() -> (s_a[], s_b[]), s_a => 21, s_b => :violet)
