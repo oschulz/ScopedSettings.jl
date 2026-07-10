@@ -98,7 +98,7 @@ function Base.getindex(s::ScopedSetting{T}) where T
         end
     else
         return x_scoped::T
-    end    
+    end
 end
 
 function Base.setindex!(s::ScopedSetting, new_default)
@@ -115,9 +115,8 @@ end
 else
     # Julia < v1.13:
     const _AnyScoped = Union{<:ScopedSetting,<:ScopedValue}
-end 
+end
 
-_get_scopedvalue(v::ScopedValue) = v
 _get_scopedvalue(s::ScopedSetting) = s._scopedval
 
 _scopedvalue_pair(pair::Pair{<:ScopedValue}) = pair
