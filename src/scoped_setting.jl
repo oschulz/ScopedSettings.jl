@@ -2,7 +2,29 @@
 
 
 """
-    struct ScopedSetting{T,F<:Base.Callable}
+    struct DefaultValue
+
+The type of [`default_value`](@ref).
+"""
+struct DefaultValue end
+@compat public DefaultValue
+
+"""
+    default_value
+
+A sentinel value that indicates that a default value is to be used.
+
+Assigning `default_value` in settings, constructors and keyword arguments
+selects the default, complementing `nothing` ("no value") and `missing`
+("value unknown"). Assigning it to a [`ScopedSetting`](@ref) removes its
+global override and restores its original default behavior.
+"""
+const default_value = DefaultValue()
+export default_value
+
+
+"""
+    mutable struct ScopedSetting{T,F<:Base.Callable}
 
 A scoped setting, similar to a `ScopedValues.ScopedValue`, but with a mutable
 global default value.
@@ -32,7 +54,7 @@ s[] == 42
 s[] = 11
 s[] == 11
 
-s[] = nothing
+s[] = default_value
 s[] == 42
 
 with(s => 21) do
@@ -41,31 +63,20 @@ end
 
 s[] == 42
 ```
-"""
-struct ScopedSetting{T,F<:Base.Callable}
-    _scopedval::ScopedValue{Union{Nothing,T}}
-    _f_default::F
-    _ref_override_val::Ref{Union{Nothing,T}}
-    _ref_override_lock::ReentrantLock
 
-    # To avoid Aqua unbound type parameter error (default ctor can't infer T if _scopedval and _ref_override_val are nothing):
-    function ScopedSetting{T,F}(scopedval::ScopedValue{Union{Nothing,T}}, _f_default::F, _ref_override_val::Ref{Union{Nothing,T}}, _ref_override_lock::ReentrantLock) where {T,F<:Base.Callable}
-        return new{T,F}(scopedval, _f_default, _ref_override_val, _ref_override_lock)
+[`default_value`](@ref) is the only reserved value, so `T` may include
+`Nothing`, e.g. `ScopedSetting{Union{Nothing,Int}}(0)`.
+"""
+mutable struct ScopedSetting{T,F<:Base.Callable}
+    const _f_default::F
+    @atomic _override::Union{DefaultValue,T}
+    const _scopedval::ScopedValue{T}
+
+    function ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
+        return new{T,F}(f_default, DefaultValue(), ScopedValue{T}())
     end
 end
 export ScopedSetting
-
-# ToDo: Make ScopedSetting a subtype of AbstractScopedValue on Julia >= v1.13?
-# ToDo: Make use of LazyScopedValue on Julia >= v1.13?
-
-function ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
-    return ScopedSetting{T,F}(
-        ScopedValue{Union{Nothing,T}}(nothing),
-        f_default,
-        Ref{Union{Nothing,T}}(nothing),
-        ReentrantLock()
-    )
-end
 
 function ScopedSetting{T}(x_default) where T
     f_default = Returns(convert(T, x_default))
@@ -85,30 +96,50 @@ end
 
 ScopedSetting(ctor_default::Type{T}) where T = ScopedSetting{T,Type{T}}(ctor_default)
 
-function Base.getindex(s::ScopedSetting{T}) where T
-    x_scoped = s._scopedval[]
-    if isnothing(x_scoped)
-        @lock s._ref_override_lock begin
-            x_override = s._ref_override_val[]
-            if isnothing(x_override)
-                return s._f_default()::T
-            else
-                return x_override::T
-            end
-        end
-    else
-        return x_scoped::T
-    end
+
+Base.eltype(::Type{<:ScopedSetting{T}}) where T = T
+
+function _default_value(s::ScopedSetting{T}) where T
+    x_override = @atomic s._override
+    return x_override isa DefaultValue ? s._f_default()::T : x_override
 end
 
-function Base.setindex!(s::ScopedSetting, new_default)
-    if isnothing(s._scopedval[])
-        @lock s._ref_override_lock s._ref_override_val[] = new_default
-    else
-        error("Can't set ScopedSetting default value when inside of a non-default scope/context")
-    end
-    return new_default
+function Base.getindex(s::ScopedSetting{T}) where T
+    maybe_scoped = ScopedValues.get(s._scopedval)
+    return maybe_scoped isa Nothing ? _default_value(s) : something(maybe_scoped)::T
 end
+
+function Base.setindex!(s::ScopedSetting{T}, x) where T
+    _check_not_shadowed(s)
+    @atomic s._override = convert(T, x)
+    return s
+end
+
+function Base.setindex!(s::ScopedSetting, ::DefaultValue)
+    _check_not_shadowed(s)
+    @atomic s._override = DefaultValue()
+    return s
+end
+
+_is_shadowed(s::ScopedSetting) = isassigned(s._scopedval)
+
+function _check_not_shadowed(s::ScopedSetting)
+    if _is_shadowed(s)
+        error("Can't set the global default value of a ScopedSetting inside a scope that sets it")
+    end
+    return nothing
+end
+
+function Base.show(io::IO, s::ScopedSetting{T}) where T
+    print(io, ScopedSetting, '{', T, "}(")
+    try
+        show(IOContext(io, :typeinfo => T), s[])
+    catch
+        print(io, "<error>")
+    end
+    print(io, ')')
+end
+
 
 @static if isdefined(ScopedValues, :AbstractScopedValue)
     const _AnyScoped = Union{<:ScopedSetting,<:ScopedValues.AbstractScopedValue}
@@ -117,10 +148,8 @@ else
     const _AnyScoped = Union{<:ScopedSetting,<:ScopedValue}
 end
 
-_get_scopedvalue(s::ScopedSetting) = s._scopedval
-
 _scopedvalue_pair(pair::Pair{<:ScopedValue}) = pair
-_scopedvalue_pair(pair::Pair{<:ScopedSetting}) = _get_scopedvalue(pair.first) => pair.second
+_scopedvalue_pair(pair::Pair{<:ScopedSetting}) = pair.first._scopedval => convert(eltype(pair.first), pair.second)
 
 
 @static if isdefined(Base, :ScopedValues)
@@ -137,7 +166,7 @@ end
 # Implements support for @with, modified versions of ScopedValues.Scope methods for ScopedValue:
 
 @inline function ScopedValues.Scope(parent::Union{Nothing, Scope}, key::ScopedSetting{T}, value) where T
-    return Scope(parent, key._scopedval, value)
+    return Scope(parent, key._scopedval, convert(T, value))
 end
 
 

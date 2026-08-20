@@ -3,7 +3,7 @@
 using ScopedSettings
 using Test
 
-using ScopedValues: @with, with
+using ScopedValues: @with, with, ScopedValue
 
 
 @testset "scoped_setting" begin
@@ -28,6 +28,10 @@ using ScopedValues: @with, with
     @test ScopedSetting{AbstractVector}(Vector{Int}) isa ScopedSetting{AbstractVector, Type{Vector{Int}}}
     @test ScopedSetting{AbstractVector}(Vector{Int})[] == Int[]
 
+    @test repr(ScopedSetting(42)) == "ScopedSetting{$Int}(42)"
+    @test repr(ScopedSetting{Int}(() -> error("borked"))) == "ScopedSetting{$Int}(<error>)"
+    @test eltype(ScopedSetting(42)) == Int
+
     s_a = ScopedSetting(42)
     s_b = ScopedSetting(GetPreference(ScopedSettings, "some_pref", :green))
 
@@ -39,57 +43,55 @@ using ScopedValues: @with, with
     @test @inferred(s_a[]) == 42
     @test @inferred(s_b[]) == :blue
 
-    s_a[] = 11
+    @test setindex!(s_a, 11) === s_a
     s_b[] = :turquoise
     @test @inferred(s_a[]) == 11
     @test @inferred(s_b[]) == :turquoise
 
+    @test_throws MethodError s_a[] = nothing
+    @test_throws MethodError with(() -> s_a[], s_a => default_value)
+    @test_throws MethodError @with s_a => default_value s_a[]
+
     with(s_a => 21) do
         @test_throws ErrorException s_a[] = 0
+        @test_throws ErrorException s_a[] = default_value
     end
     @test s_a[] == 11
 
-    s_a[] = nothing
-    s_b[] = nothing
+    s_a[] = default_value
+    s_b[] = default_value
     @test @inferred(s_a[]) == 42
     @test @inferred(s_b[]) == :blue
 
     s_a[] = 11
     s_b[] = :turquoise
 
-    let s_a = s_a, s_b = s_b
+    sv = ScopedValue(0)
+
+    let s_a = s_a, s_b = s_b, sv = sv
         @test @inferred(
             with(() -> (s_a[], s_b[]), s_a => 21, s_b => :violet)
         ) == (21, :violet)
 
         @test @inferred(
-            with(() -> (s_a[], s_b[]), s_a._scopedval => 21, s_b => :violet)
+            with(() -> (sv[], s_b[]), sv => 21, s_b => :violet)
         ) == (21, :violet)
 
         @test @inferred(
-            with(() -> (s_a[], s_b[]), s_a => 21, s_b._scopedval => :violet)
-        ) == (21, :violet)
-
-        @test @inferred(
-            with(() -> (s_a[], s_b[]), s_a._scopedval => 21, s_b._scopedval => :violet)
-        ) == (21, :violet)
-
+            with(() -> (s_a[], sv[]), s_a => 21, sv => 33)
+        ) == (21, 33)
 
         @test @inferred((
             () -> @with s_a => 21 s_b => :violet (s_a[], s_b[])
         )()) == (21, :violet)
 
         @test @inferred((
-            () -> @with s_a._scopedval => 21 s_b => :violet (s_a[], s_b[])
+            () -> @with sv => 21 s_b => :violet (sv[], s_b[])
         )()) == (21, :violet)
 
         @test @inferred((
-            () -> @with s_a => 21 s_b._scopedval => :violet (s_a[], s_b[])
-        )()) == (21, :violet)
-
-        @test @inferred((
-            () -> @with s_a._scopedval => 21 s_b._scopedval => :violet (s_a[], s_b[])
-        )()) == (21, :violet)
+            () -> @with s_a => 21 sv => 33 (s_a[], sv[])
+        )()) == (21, 33)
     end
 
     s_union = ScopedSetting{Union{Int,Float64}}(42)
@@ -106,5 +108,39 @@ using ScopedValues: @with, with
             @test s_union[] == 5.0
             @test s_union[] isa Float64
         end
+    end
+
+    @testset "types containing Nothing" begin
+        s_n = ScopedSetting{Union{Nothing,Int}}(0)
+
+        @test s_n[] == 0
+        s_n[] = nothing
+        @test s_n[] === nothing
+        s_n[] = default_value
+        @test s_n[] == 0
+
+        with(s_n => nothing) do
+            @test s_n[] === nothing
+        end
+        @test s_n[] == 0
+    end
+
+    @testset "types admitting the markers" begin
+        s_any = ScopedSetting{Any}(42)
+        s_any[] = 11
+        with(s_any => default_value) do
+            # Scoped values are stored out-of-band, so the marker is just a value here:
+            @test s_any[] === default_value
+            @test_throws ErrorException s_any[] = 0
+        end
+        @test s_any[] == 11
+        s_any[] = default_value
+        @test s_any[] == 42
+    end
+
+    @testset "pairs with abstract key type" begin
+        s = ScopedSetting(42)
+        pair = first(Dict{ScopedSetting,Any}(s => 21))
+        @test with(() -> s[], pair) == 21
     end
 end

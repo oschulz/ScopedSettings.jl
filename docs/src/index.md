@@ -29,9 +29,12 @@ some_setting[] == 11
 and can also be restored to the original default value
 
 ```julia
-some_setting[] = nothing
+some_setting[] = default_value
 some_setting[] == 42
 ```
+
+[`default_value`](@ref) is the only reserved value, so setting types may
+include `Nothing`, e.g. `ScopedSetting{Union{Nothing,Int}}(0)`.
 
 The global default can also be a function (without arguments):
 
