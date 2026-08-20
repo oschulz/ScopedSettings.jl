@@ -78,6 +78,13 @@ julia> (some_setting[], other_setting[])  # globally unchanged
 ScopedSettings re-exports `ScopedValues.@with` and `ScopedValues.with(...)`. You can mix `ScopedSetting` and `ScopedValue` objects in `@with` expressions
 and `with(...)` calls.
 
+!!! note
+    On Julia v1.10, scoped values are propagated via the logging system (see
+    [ScopedValues](https://github.com/vchuravy/ScopedValues.jl)). Code that
+    replaces the logger inside a scope, like `Logging.with_logger` or
+    `Test.@test_logs`, does not see scoped setting values there — use
+    `ScopedValues.with_logger` instead.
+
 To base `ScopedSetting` default values on
 [package preferences](https://github.com/JuliaPackaging/Preferences.jl) and
 environment variables, ScopedSettings provides [`GetPreference{T}`](@ref)
