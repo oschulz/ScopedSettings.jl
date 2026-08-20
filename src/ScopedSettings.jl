@@ -22,6 +22,7 @@ end
 export with, @with
 
 include("get_preference.jl")
+include("unchanged.jl")
 include("scoped_setting.jl")
 
 end # module

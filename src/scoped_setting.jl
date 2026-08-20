@@ -99,8 +99,9 @@ julia> s[]
 42
 ```
 
-[`default_value`](@ref) is the only reserved value, so `T` may include
-`Nothing`, e.g. `ScopedSetting{Union{Nothing,Int}}(0)`.
+[`default_value`](@ref) and [`ScopedSettings.unchanged`](@ref ScopedSettings.unchanged) are
+the only reserved values, so `T` may include `Nothing`, e.g.
+`ScopedSetting{Union{Nothing,Int}}(0)`.
 
 `isassigned` and `ScopedValues.get` are supported on all Julia versions. On
 Julia >= v1.13, `ScopedSetting` is a subtype of
@@ -147,6 +148,9 @@ function Base.setindex!(s::ScopedSetting, ::DefaultValue)
     @atomic s._override = DefaultValue()
     return s
 end
+
+# A pure no-op, so it is safe even where real assignments would be rejected:
+Base.setindex!(s::ScopedSetting, ::Unchanged) = s
 
 function _check_not_shadowed(s::ScopedSetting)
     if _is_shadowed(s)

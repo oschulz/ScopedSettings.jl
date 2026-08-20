@@ -145,6 +145,28 @@ using ScopedValues: ScopedValues, @with, with, ScopedValue
         @test with(() -> s[], pair) == 21
     end
 
+    @testset "unchanged" begin
+        unchanged = ScopedSettings.unchanged
+        @test ScopedSettings.Unchanged() === unchanged
+        @test isbits(unchanged)
+        @test !Base.isexported(ScopedSettings, :unchanged)
+        @test !Base.isexported(ScopedSettings, :Unchanged)
+
+        s = ScopedSetting(42)
+        s[] = 11
+        s[] = unchanged
+        @test s[] == 11
+        with(s => 21) do
+            # A pure no-op, allowed even while the setting is shadowed:
+            s[] = unchanged
+            @test s[] == 21
+        end
+        @test s[] == 11
+        s[] = default_value
+        s[] = unchanged
+        @test s[] == 42
+    end
+
     @testset "scoped value interface" begin
         s = ScopedSetting(42)
         @test isassigned(s)
