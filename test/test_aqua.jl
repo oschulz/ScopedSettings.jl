@@ -5,7 +5,9 @@ import Aqua
 import ScopedSettings
 
 Test.@testset "Package ambiguities" begin
-    Test.@test isempty(Test.detect_ambiguities(ScopedSettings))
+    # Cross-module check, but ignore ambiguities among Base/Core methods themselves:
+    ambiguities = Test.detect_ambiguities(ScopedSettings, Base, Core; recursive = true)
+    Test.@test isempty(filter(ms -> any(m -> m.module === ScopedSettings, ms), ambiguities))
 end # testset
 
 Test.@testset "Aqua tests" begin
