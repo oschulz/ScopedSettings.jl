@@ -73,22 +73,30 @@ To use a callable or type as the default value itself, wrap it in `Returns`.
 
 Example:
 
-```julia
-s = ScopedSetting(42)
+```jldoctest
+julia> s = ScopedSetting(42)
+ScopedSetting{Int64}(42)
 
-s[] == 42
+julia> s[]
+42
 
-s[] = 11
-s[] == 11
+julia> s[] = 11;
 
-s[] = default_value
-s[] == 42
+julia> s[]
+11
 
-with(s => 21) do
-    s[] == 21
-end
+julia> s[] = default_value;
 
-s[] == 42
+julia> s[]
+42
+
+julia> with(s => 21) do
+           s[]
+       end
+21
+
+julia> s[]
+42
 ```
 
 [`default_value`](@ref) is the only reserved value, so `T` may include

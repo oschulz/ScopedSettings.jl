@@ -10,4 +10,5 @@ Documenter.DocMeta.setdocmeta!(
     :(using ScopedSettings);
     recursive=true,
 )
-Documenter.doctest(ScopedSettings)
+# Make Int32/Int64 in doctest output word-size agnostic:
+Documenter.doctest(ScopedSettings; doctestfilters = [r"Int(32|64)"])

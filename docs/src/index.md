@@ -6,63 +6,72 @@ A [`ScopedSetting{T}`](@ref), like a `ScopedValue{T}`, can be set to different v
 
 So while a scoped setting
 
-```julia
-using ScopedSettings
+```jldoctest usage
+julia> using ScopedSettings
 
-some_setting = ScopedSetting(42)
-some_setting isa ScopedSetting{Int}
+julia> some_setting = ScopedSetting(42)
+ScopedSetting{Int64}(42)
 ```
 
 is accessed like a `ScopedValue`
 
-```julia
-some_setting[] == 42
+```jldoctest usage
+julia> some_setting[]
+42
 ```
 
 its global default value can be overridden
 
-```julia
-some_setting[] = 11
-some_setting[] == 11
+```jldoctest usage
+julia> some_setting[] = 11;
+
+julia> some_setting[]
+11
 ```
 
 and can also be restored to the original default value
 
-```julia
-some_setting[] = default_value
-some_setting[] == 42
+```jldoctest usage
+julia> some_setting[] = default_value;
+
+julia> some_setting[]
+42
 ```
 
 [`default_value`](@ref) is the only reserved value, so setting types may
 include `Nothing`, e.g. `ScopedSetting{Union{Nothing,Int}}(0)`.
 
-The global default can also be a function (without arguments):
+The global default can also be a function (without arguments) that is
+evaluated on each access, until it is overridden:
 
-```julia
-other_setting = ScopedSetting(()->rand())
-[other_setting[], other_setting[], other_setting[]] # random values
+```jldoctest usage
+julia> other_setting = ScopedSetting(() -> rand());
 
-other_setting[] = 1.2 # override
-other_setting[] == 1.2 # no more random values
+julia> other_setting[] isa Float64
+true
+
+julia> other_setting[] = 1.2;
+
+julia> other_setting[]
+1.2
 ```
 
 Like with a `ScopedValue`, scoped settings can be set to different values
 for different scopes:
 
-```julia
-@with some_setting => 33 other_setting => 5.2 begin
-    # Within this scope, we have
-    some_setting[] == 33 && other_setting[] == 5.2
-end
+```jldoctest usage
+julia> @with some_setting => 33 other_setting => 5.2 begin
+           (some_setting[], other_setting[])
+       end
+(33, 5.2)
 
-with(some_setting => 33, other_setting => 5.2) do
-    # Within this scope, we have
-    some_setting[] == 33 && other_setting[] == 5.2
-end
+julia> with(some_setting => 33, other_setting => 5.2) do
+           (some_setting[], other_setting[])
+       end
+(33, 5.2)
 
-# Globally we still have
-some_setting[] == 42
-other_setting[] == 1.2
+julia> (some_setting[], other_setting[])  # globally unchanged
+(42, 1.2)
 ```
 
 ScopedSettings re-exports `ScopedValues.@with` and `ScopedValues.with(...)`. You can mix `ScopedSetting` and `ScopedValue` objects in `@with` expressions

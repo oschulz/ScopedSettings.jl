@@ -28,6 +28,7 @@ makedocs(
         "LICENSE" => "LICENSE.md",
     ],
     doctest = ("fixdoctests" in ARGS) ? :fix : true,
+    doctestfilters = [r"Int(32|64)"],
     linkcheck = !("nonstrict" in ARGS),
     warnonly = ("nonstrict" in ARGS),
 )

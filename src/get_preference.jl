@@ -16,28 +16,35 @@ GetPreference{T}(m::Module, pref_name::AbstractString, x_default; env_name = ...
 `env_name` defaults to the uppercase name of the root package module of `m`,
 followed by `JL_`, followed by the uppercase preference name.
 
-Example:
+Example (using ScopedSettings itself as the target module):
 
-```julia
-f_getpref = GetPreference(SomePackage, "some_pref", 42)
+```jldoctest
+julia> f_getpref = GetPreference(ScopedSettings, "some_pref", 42)
+GetPreference{Int64}(ScopedSettings, "some_pref", 42, env_name = "SCOPEDSETTINGSJL_SOME_PREF")
 
-delete!(ENV, "SOMEPACKAGEJL_SOME_PREF")
-f_getpref() == 42
+julia> delete!(ENV, "SCOPEDSETTINGSJL_SOME_PREF");
 
-ENV["SOMEPACKAGEJL_SOME_PREF"] = "11"
-f_getpref() == 11
+julia> f_getpref()
+42
+
+julia> ENV["SCOPEDSETTINGSJL_SOME_PREF"] = "11";
+
+julia> f_getpref()
+11
+
+julia> delete!(ENV, "SCOPEDSETTINGSJL_SOME_PREF");
 ```
 
 The return value of `f_getpref()` depends on the `LocalPreferences.toml` files
 (if any) in your `LOAD_PATH` that have entries like
 
 ```toml
-[SomePackage]
+[ScopedSettings]
 some_pref = 22
 ```
 
 (see the [Preferences](https://github.com/JuliaPackaging/Preferences.jl) docs)
-and the environment variable `SOMEPACKAGEJL_SOME_PREF` (if set).
+and the environment variable `SCOPEDSETTINGSJL_SOME_PREF` (if set).
 Environment variables take precedence over preferences. If neither is set,
 `f_getpref()` returns the default value (`42` in this case).
 
