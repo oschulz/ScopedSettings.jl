@@ -61,7 +61,7 @@ import Preferences
     @test @inferred(f_getpref()) == :blue
 
     # Explicit environment variable name:
-    f_getpref = GetPreference(ScopedSettings, "some_pref", "SOME_ENV_VAR", 42)
+    f_getpref = GetPreference(ScopedSettings, "some_pref", 42, env_name = "SOME_ENV_VAR")
     @test f_getpref isa GetPreference{Int, Nothing}
     delete!(ENV, "SOME_ENV_VAR")
     @test @inferred(f_getpref()) == 42
@@ -70,8 +70,15 @@ import Preferences
     delete!(ENV, "SOME_ENV_VAR")
 
     # Explicit result type:
-    f_getpref = GetPreference{Float64}(ScopedSettings, "some_pref", "SOME_ENV_VAR", 42)
+    f_getpref = GetPreference{Float64}(ScopedSettings, "some_pref", 42, env_name = "SOME_ENV_VAR")
     @test f_getpref isa GetPreference{Float64, Nothing}
+    @test @inferred(f_getpref()) === 42.0
+
+    # Explicit result type with derived env var name:
+    f_getpref = GetPreference{Float64}(ScopedSettings, "some_pref", 42)
+    @test f_getpref isa GetPreference{Float64, Nothing}
+    @test f_getpref._env_name == "SCOPEDSETTINGSJL_SOME_PREF"
+    delete!(ENV, "SCOPEDSETTINGSJL_SOME_PREF")
     @test @inferred(f_getpref()) === 42.0
 
     # f_conv must also be applied to preference values:
@@ -102,11 +109,11 @@ import Preferences
 
     @testset "show" begin
         f_getpref = GetPreference(ScopedSettings, "some_pref", 42)
-        @test repr(f_getpref) == "GetPreference{$Int}(ScopedSettings, \"some_pref\", \"SCOPEDSETTINGSJL_SOME_PREF\", 42)"
+        @test repr(f_getpref) == "GetPreference{$Int}(ScopedSettings, \"some_pref\", 42, env_name = \"SCOPEDSETTINGSJL_SOME_PREF\")"
         @test repr("text/plain", f_getpref) == repr(f_getpref)
 
         f_getpref = GetPreference(ScopedSettings, "some_pref", :green, f_conv = Symbol)
-        @test repr(f_getpref) == "GetPreference{Symbol}(ScopedSettings, \"some_pref\", \"SCOPEDSETTINGSJL_SOME_PREF\", :green, f_conv = Symbol)"
+        @test repr(f_getpref) == "GetPreference{Symbol}(ScopedSettings, \"some_pref\", :green, env_name = \"SCOPEDSETTINGSJL_SOME_PREF\", f_conv = Symbol)"
     end
 
     @testset "module UUID resolution" begin

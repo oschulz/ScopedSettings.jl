@@ -9,14 +9,12 @@ environment variables and a default value.
 Constructors:
 
 ```julia
-GetPreference(m::Module, pref_name::AbstractString, x_default; f_conv = nothing)
-GetPreference(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing)
-GetPreference{T}(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing)
+GetPreference(m::Module, pref_name::AbstractString, x_default; env_name = ..., f_conv = nothing)
+GetPreference{T}(m::Module, pref_name::AbstractString, x_default; env_name = ..., f_conv = nothing)
 ```
 
-If `env_name` is not specified, it defaults to the uppercase name of the
-root package module of `m`, followed by `JL_`, followed by the uppercase
-preference name.
+`env_name` defaults to the uppercase name of the root package module of `m`,
+followed by `JL_`, followed by the uppercase preference name.
 
 Example:
 
@@ -59,7 +57,10 @@ end
 export GetPreference
 
 
-function GetPreference{T}(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing) where T
+function GetPreference{T}(
+    m::Module, pref_name::AbstractString, x_default;
+    env_name::AbstractString = _default_env_name(m, pref_name), f_conv = nothing
+) where T
     module_name = string(nameof(Base.moduleroot(m)))
     module_uuid = _get_module_uuid(m)
     new_x_default = convert(T, x_default)
@@ -67,25 +68,25 @@ function GetPreference{T}(m::Module, pref_name::AbstractString, env_name::Abstra
     GetPreference{T,F}(module_name, module_uuid, pref_name, env_name, new_x_default, f_conv)
 end
 
-function GetPreference(m::Module, pref_name::AbstractString, env_name::AbstractString, x_default; f_conv = nothing)
+function GetPreference(
+    m::Module, pref_name::AbstractString, x_default;
+    env_name::AbstractString = _default_env_name(m, pref_name), f_conv = nothing
+)
     new_x_default = _preproc_default_val(x_default)
     T = typeof(new_x_default)
-    GetPreference{T}(m, pref_name, env_name, new_x_default; f_conv = f_conv)
+    GetPreference{T}(m, pref_name, new_x_default; env_name = env_name, f_conv = f_conv)
 end
 
-function GetPreference(m::Module, pref_name::AbstractString, x_default::T; f_conv = nothing) where T
-    module_name = string(nameof(Base.moduleroot(m)))
-    env_name = uppercase(module_name) * "JL_" * uppercase(pref_name)
-    GetPreference(m, pref_name, env_name, x_default; f_conv = f_conv)
-end
+_default_env_name(m::Module, pref_name::AbstractString) =
+    uppercase(string(nameof(Base.moduleroot(m)))) * "JL_" * uppercase(pref_name)
 
 
 function Base.show(io::IO, mime::MIME"text/plain", @nospecialize(f::GetPreference{T})) where T
     print(io, "GetPreference{", T, "}(")
     print(io, f._module_name, ", ")
     show(io, f._pref_name); print(io, ", ")
-    show(io, f._env_name); print(io, ", ")
     show(io, f._x_default)
+    print(io, ", env_name = "); show(io, f._env_name)
     if !isnothing(f._f_conv)
         print(io, ", f_conv = ")
         show(io, mime, f._f_conv)
