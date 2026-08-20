@@ -3,7 +3,7 @@
 using ScopedSettings
 using Test
 
-using ScopedValues: @with, with, ScopedValue
+using ScopedValues: ScopedValues, @with, with, ScopedValue
 
 
 @testset "scoped_setting" begin
@@ -143,5 +143,20 @@ using ScopedValues: @with, with, ScopedValue
         s = ScopedSetting(42)
         pair = first(Dict{ScopedSetting,Any}(s => 21))
         @test with(() -> s[], pair) == 21
+    end
+
+    @testset "scoped value interface" begin
+        s = ScopedSetting(42)
+        @test isassigned(s)
+        @test ScopedValues.get(s) == Some(42)
+        with(s => 21) do
+            @test ScopedValues.get(s) == Some(21)
+        end
+        s[] = 11
+        @test ScopedValues.get(s) == Some(11)
+
+        @static if isdefined(Base, :ScopedValues) && isdefined(Base.ScopedValues, :AbstractScopedValue)
+            @test s isa Base.ScopedValues.AbstractScopedValue{Int}
+        end
     end
 end
