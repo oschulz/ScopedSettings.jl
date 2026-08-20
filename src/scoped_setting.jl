@@ -101,7 +101,7 @@ Base.eltype(::Type{<:ScopedSetting{T}}) where T = T
 
 function _default_value(s::ScopedSetting{T}) where T
     x_override = @atomic s._override
-    return x_override isa DefaultValue ? s._f_default()::T : x_override
+    return x_override isa DefaultValue ? convert(T, s._f_default())::T : x_override
 end
 
 function Base.getindex(s::ScopedSetting{T}) where T

@@ -25,6 +25,7 @@ using ScopedValues: @with, with, ScopedValue
     # Explicit-type ctor must pass functions and type ctors through:
     @test @inferred(ScopedSetting{Symbol}(GetPreference(ScopedSettings, "some_pref", :green))) isa ScopedSetting{Symbol, GetPreference{Symbol, Nothing}}
     @test @inferred(ScopedSetting{Float64}(() -> 4.2)[]) === 4.2
+    @test @inferred(ScopedSetting{Float64}(() -> 42)[]) === 42.0
     @test ScopedSetting{AbstractVector}(Vector{Int}) isa ScopedSetting{AbstractVector, Type{Vector{Int}}}
     @test ScopedSetting{AbstractVector}(Vector{Int})[] == Int[]
 
