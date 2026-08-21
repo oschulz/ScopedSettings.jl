@@ -126,6 +126,23 @@ using ScopedValues: ScopedValues, @with, with, ScopedValue
         @test s_n[] == 0
     end
 
+    @testset "non-isbits and oversized value types" begin
+        s_str = ScopedSetting("foo")
+        s_str[] = "bar"
+        @test s_str[] == "bar"
+        @test with(() -> s_str[], s_str => "baz") == "baz"
+        @test s_str[] == "bar"
+
+        # Wider than any hardware atomic, so the override is stored by reference:
+        big, other = ntuple(Float64, 16), ntuple(i -> -Float64(i), 16)
+        s_big = ScopedSetting(big)
+        s_big[] = other
+        @test s_big[] === other
+        @test with(() -> s_big[], s_big => big) === big
+        s_big[] = default_value
+        @test s_big[] === big
+    end
+
     @testset "types admitting the markers" begin
         s_any = ScopedSetting{Any}(42)
         s_any[] = 11
@@ -133,6 +150,9 @@ using ScopedValues: ScopedValues, @with, with, ScopedValue
             # Scoped values are stored out-of-band, so the marker is just a value here:
             @test s_any[] === default_value
             @test_throws ErrorException s_any[] = 0
+        end
+        with(s_any => ScopedSettings.unchanged) do
+            @test s_any[] === ScopedSettings.unchanged
         end
         @test s_any[] == 11
         s_any[] = default_value

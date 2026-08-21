@@ -39,8 +39,28 @@ julia> some_setting[]
 ```
 
 [`default_value`](@ref) and [`ScopedSettings.unchanged`](@ref ScopedSettings.unchanged) are
-the only reserved values, so setting types may include `Nothing`, e.g.
+special only when assigned to a setting, not as scoped values: `s[] = unchanged`
+does nothing and `@with s => unchanged` sets `s[]` to `unchanged`. Setting types
+are unrestricted and may include `Nothing`, e.g.
 `ScopedSetting{Union{Nothing,Int}}(0)`.
+
+Both are meant to be passed on rather than written literally, so that
+configuration functions can leave unspecified settings alone:
+
+```jldoctest usage
+julia> using ScopedSettings: unchanged
+
+julia> set_some!(x = unchanged) = (some_setting[] = x; some_setting[]);
+
+julia> set_some!()
+42
+
+julia> set_some!(11)
+11
+
+julia> set_some!(default_value)
+42
+```
 
 The global default can also be a function (without arguments) that is
 evaluated on each access, until it is overridden:

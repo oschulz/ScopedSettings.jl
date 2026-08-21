@@ -70,6 +70,9 @@ ScopedSetting{T,F}(f_default::F) where {T,F<:Base.Callable}
 
 `Function` and `Type` arguments are always taken as default-value factories.
 To use a callable or type as the default value itself, wrap it in `Returns`.
+Factories run on every access and may run concurrently on different tasks, so
+factories that mutate shared state must synchronize themselves. Task-local
+impurity like `rand()` is safe.
 
 Example:
 
@@ -100,7 +103,8 @@ julia> s[]
 ```
 
 [`default_value`](@ref) and [`ScopedSettings.unchanged`](@ref ScopedSettings.unchanged) are
-the only reserved values, so `T` may include `Nothing`, e.g.
+special only when assigned to a setting, not as scoped values. `T` itself is
+unrestricted and may include `Nothing`, e.g.
 `ScopedSetting{Union{Nothing,Int}}(0)`.
 
 `isassigned` and `ScopedValues.get` are supported on all Julia versions. On
