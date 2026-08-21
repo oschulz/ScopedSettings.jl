@@ -163,7 +163,8 @@ function Base.show(io::IO, s::ScopedSetting{T}) where T
     print(io, ScopedSetting, '{', T, "}(")
     try
         show(IOContext(io, :typeinfo => T), s[])
-    catch
+    catch err
+        err isa InterruptException && rethrow()
         print(io, "<error>")
     end
     print(io, ')')
