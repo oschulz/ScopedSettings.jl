@@ -194,7 +194,8 @@ else
     Base.isassigned(::ScopedSetting) = true
     ScopedValues.get(s::ScopedSetting{T}) where T = Some{T}(s[])
 
-    _is_shadowed(s::ScopedSetting) = isassigned(s._scopedval)
+    # Not isassigned: that only tests for a default value in ScopedValues < v1.6.2:
+    _is_shadowed(s::ScopedSetting) = !isnothing(ScopedValues.get(s._scopedval))
 
     const _AnyScoped = Union{ScopedSetting,ScopedValue}
 
