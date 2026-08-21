@@ -23,6 +23,6 @@ Test.@testset "Aqua tests" begin
     # foreign-only signatures, but are never dispatched for those since the
     # ScopedValues methods are more specific). Pin the exact count so that any
     # new piracy still fails the test:
-    n_expected_piracies = ScopedSettings._HAS_ABSTRACT_SCOPED_VALUE ? 0 : 2
-    Test.@test length(Aqua.Piracy.hunt(ScopedSettings)) == n_expected_piracies
+    expected_piracies = ScopedSettings._HAS_ABSTRACT_SCOPED_VALUE ? [] : [:Scope, :with]
+    Test.@test sort([m.name for m in Aqua.Piracy.hunt(ScopedSettings)]) == expected_piracies
 end # testset
