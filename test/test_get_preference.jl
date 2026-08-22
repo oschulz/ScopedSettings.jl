@@ -54,6 +54,12 @@ import Preferences
     ENV["SCOPEDSETTINGSJL_SOME_PREF"] = "11"
     @test @inferred(f_getpref()) == 22
 
+    # f_conv results are converted, so they need not match T exactly (e.g. TOML
+    # integers are Int64 even where Int is Int32):
+    f_getpref = GetPreference{Int32}(ScopedSettings, "some_pref", Int32(42), f_conv = s -> 2 * parse(Int64, s))
+    ENV["SCOPEDSETTINGSJL_SOME_PREF"] = "11"
+    @test @inferred(f_getpref()) === Int32(22)
+
     # Test type stability when f_conv is a type ctor:
     f_getpref = GetPreference(ScopedSettings, "some_pref", :green, f_conv = Symbol)
     @test f_getpref isa GetPreference{Symbol, Type{Symbol}}

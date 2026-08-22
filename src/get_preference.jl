@@ -109,7 +109,7 @@ function (f::GetPreference{T})() where T
     if haskey(ENV, f._env_name)
         envval = ENV[f._env_name]
         if !isnothing(f._f_conv)
-            return f_conv(envval)::T
+            return convert(T, f_conv(envval))::T
         else
             return convert_preference(T, envval)::T
         end
@@ -117,7 +117,7 @@ function (f::GetPreference{T})() where T
         prefval = load_preference(f._module_uuid, f._pref_name)
         if !isnothing(prefval)
             if !isnothing(f._f_conv)
-                return f_conv(prefval)::T
+                return convert(T, f_conv(prefval))::T
             else
                 return convert_preference(T, prefval)::T
             end
