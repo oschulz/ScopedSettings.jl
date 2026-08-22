@@ -8,7 +8,7 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ScopedSettings builds on
-[ScopedValues](https://github.com/vchuravy/ScopedValues.jl) (equivalent to
+[ScopedValues](https://github.com/JuliaLang/ScopedValues.jl) (equivalent to
 `Base.ScopedValues` for Julia >= v1.11) to implement scoped settings.
 
 A `ScopedSetting`, like a `ScopedValue`, can be set to different values in

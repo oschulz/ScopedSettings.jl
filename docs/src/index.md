@@ -1,6 +1,6 @@
 # ScopedSettings.jl
 
-ScopedSettings builds on [ScopedValues](https://github.com/vchuravy/ScopedValues.jl) (equivalent to `Base.ScopedValues` for Julia >= v1.11) to implement scoped settings.
+ScopedSettings builds on [ScopedValues](https://github.com/JuliaLang/ScopedValues.jl) (equivalent to `Base.ScopedValues` for Julia >= v1.11) to implement scoped settings.
 
 A [`ScopedSetting{T}`](@ref), like a `ScopedValue{T}`, can be set to different values in different scopes. But unlike a `ScopedValue`, the global default value of a `ScopedSetting` can either be a value or can be computed on the fly, and can be mutated via a global override. ScopedSettings integrates with [Preferences](https://github.com/JuliaPackaging/Preferences.jl) to base `ScopedSetting` default values on preferences and environment variables.
 
@@ -100,7 +100,7 @@ and `with(...)` calls.
 
 !!! note
     On Julia v1.10, scoped values are propagated via the logging system (see
-    [ScopedValues](https://github.com/vchuravy/ScopedValues.jl)). Code that
+    [ScopedValues](https://github.com/JuliaLang/ScopedValues.jl)). Code that
     replaces the logger inside a scope, like `Logging.with_logger` or
     `Test.@test_logs`, does not see scoped setting values there — use
     `ScopedValues.with_logger` instead.
