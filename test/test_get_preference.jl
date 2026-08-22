@@ -62,7 +62,8 @@ import Preferences
 
     # Test type stability when f_conv is a type ctor:
     f_getpref = GetPreference(ScopedSettings, "some_pref", :green, f_conv = Symbol)
-    @test f_getpref isa GetPreference{Symbol, Type{Symbol}}
+    @test typeof(f_getpref) === GetPreference{Symbol, Core.Typeof(Symbol)}
+    @test isconcretetype(typeof(f_getpref))
     ENV["SCOPEDSETTINGSJL_SOME_PREF"] = "blue"
     @test @inferred(f_getpref()) == :blue
 
